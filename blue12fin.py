@@ -1,5 +1,3 @@
-
-
 import cv2
 import numpy as np
 import serial.tools.list_ports
@@ -28,17 +26,14 @@ def main_loop():
 	else:
 		mvsdk.CameraSetIspOutFormat(hCamera, mvsdk.CAMERA_MEDIA_TYPE_BGR8)
 	mvsdk.CameraSetTriggerMode(hCamera, 0)
-	
 	mvsdk.CameraSetAeState(hCamera, 0)
 	mvsdk.CameraSetExposureTime(hCamera, 15 * 1000)
-	
 	mvsdk.CameraPlay(hCamera)
 	FrameBufferSize = cap.sResolutionRange.iWidthMax * cap.sResolutionRange.iHeightMax * (1 if monoCamera else 3)
 	pFrameBuffer = mvsdk.CameraAlignMalloc(FrameBufferSize, 16)
 	fps = 0
 	start_time = cv2.getTickCount()
 	while (cv2.waitKey(1) & 0xFF) != 27:  
-
 		try:
 			pRawData, FrameHead = mvsdk.CameraGetImageBuffer(hCamera, 200)
 			mvsdk.CameraImageProcess(hCamera, pRawData, pFrameBuffer, FrameHead)
@@ -48,9 +43,7 @@ def main_loop():
 			frame = frame.reshape((FrameHead.iHeight, FrameHead.iWidth, 1 if FrameHead.uiMediaType == mvsdk.CAMERA_MEDIA_TYPE_MONO8 else 3) )
 			frame = cv2.flip(frame, 0)
 			frame = cv2.resize(frame, (640, 480), interpolation=cv2.INTER_LINEAR)
-			
 			hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-			
 			lower_blue = np.array([100, 50, 50])
 			upper_blue = np.array([130, 255, 255])
 			blue_mask = cv2.inRange(hsv, lower_blue, upper_blue)
@@ -68,7 +61,6 @@ def main_loop():
 			for i in range(len(rects) - 1):
 				for j in range(i + 1, len(rects)):
 					value = abs(rects[i][2] * rects[i][3] - rects[j][2] * rects[j][3])
-					
 					y_diff = abs(rects[i][1] - rects[j][1])
 					x_diff = abs(rects[i][0] - rects[j][0])
 					if x_diff != 0:
@@ -77,46 +69,27 @@ def main_loop():
 					else:
 						out = float('0')  
 						ratio_range = 2  
-					
-					
-					
-					
-					
-					
-					
 					if value <= min_value and y_diff <= 15 and 1 <= ratio_range <= 3.5:  
 						min_value = value
 						best_rects = [rects[i], rects[j]]
-			
 			if best_rects:
-				
 				rectangle1, rectangle2 = best_rects
 				point1 = [rectangle1[0] + rectangle1[2] / 2, rectangle1[1]]
 				point2 = [rectangle1[0] + rectangle1[2] / 2, rectangle1[1] + rectangle1[3]]
 				point3 = [rectangle2[0] + rectangle2[2] / 2, rectangle2[1]]
 				point4 = [rectangle2[0] + rectangle2[2] / 2, rectangle2[1] + rectangle2[3]]
-				
 				center_point1 = [(point1[0] + point2[0]) / 2, (point1[1] + point2[1]) / 2]
 				center_point2 = [(point3[0] + point4[0]) / 2, (point3[1] + point4[1]) / 2]
-				
 				middle_point = [(center_point1[0] + center_point2[0]) / 2, (center_point1[1] + center_point2[1]) / 2]
-				
-				
 				print("12blueMiddle Point:", middle_point)
-				
 				pts = np.array([point1, point2, point4, point3], np.int32).reshape((-1, 1, 2))
 				cv2.polylines(frame, [pts], isClosed=True, color=(0, 255, 0), thickness=2)
 				cv2.circle(frame, (int(middle_point[0]), int(middle_point[1])), radius=5, color=(0, 255, 255),thickness=-1)
-
-				test_middle_point = int(((int(middle_point[0]) + int(middle_point[1])) / 10) % 10)
-
-				
+				test_middle_point = int(((int(middle_point[0]) + int(middle_point[1])) / 10) % 10)				
 				hex_part1 = f'{int(middle_point[0]):03}{int(middle_point[1]):03}'
-				
 				hex_part2 = f'{int(out):05}'
 				hex_string = hex_part1 + hex_part2
 				print("Hex String with 'out':", hex_string)
-
 				def send_string_to_com(input_string, com_port='COM3', baudrate=115200, timeout=1):
 					try:
 						byte_data = input_string.encode('utf-8')
@@ -128,27 +101,21 @@ def main_loop():
 						print(f"发送字符串到USB时发生错误：{e}")
 				string_to_send = hex_string
 				send_string_to_com(string_to_send)
-
-			
 			end_time = cv2.getTickCount()
 			elapsed_time = (end_time - start_time)/1.5/cv2.getTickFrequency()
 			fps = 1 / elapsed_time
 			start_time = cv2.getTickCount()
-			
 			cv2.putText(frame, "FPS: {:.2f}".format(fps), (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 			cv2.imshow("Press ESC Get the fuck out of here.", frame)
 		except mvsdk.CameraException as e:
 			if e.error_code == mvsdk.CAMERA_STATUS_TIME_OUT:
-				
 				continue
 			elif e.error_code == mvsdk.CAMERA_STATUS_NOT_SUPPORTED:
 				print("Not supported error: {}".format(e.message))
 			else:
 				print("Camera error({}): {}".format(e.error_code, e.message))
 				break
-	
 	mvsdk.CameraUnInit(hCamera)
-	
 	mvsdk.CameraAlignFree(pFrameBuffer)
 def main():
 	try:
