@@ -6,7 +6,7 @@
 
 本地环境配置：
 
-* CUDA12.2 + PyTorch + Anaconda  
+* CUDA12.2 + PyTorch + Anaconda： 四点模型和大风车五点模型以及预测算法所使用的环境，当前代码几乎不需要使用GPU加速
 * OpenCV3.4.2：[编译安装](https://github.com/opencv/opencv.git)
 * python3.8：不想报错的话至少配置一个3.5+的环境，编辑器使用顺手的就行，Linch使用的是jupyter（方便方案验证）和PyCharm（使用顺手）这两个在运行代码的时候会根据版本不同出现libtiff等库的不通用，在本代码中可以选择性加减```_,```来防止contours的报错
 * numpy  serial：python 包，用于数据处理和串口打开，安装方式：```pip install numpy```  ```serial同```
